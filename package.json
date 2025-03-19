@@ -1,0 +1,79 @@
+{
+	"name": "@runn/graphql-compiler",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"lint": "eslint . && prettier --check .",
+		"format": "prettier --write .",
+		"test:unit": "vitest",
+		"test": "npm run test:unit -- --run",
+		"knip": "knip"
+	},
+	"devDependencies": {
+		"@eslint/compat": "1.2.7",
+		"@eslint/js": "9.22.0",
+		"@sveltejs/adapter-auto": "4.0.0",
+		"@sveltejs/kit": "2.20.1",
+		"@sveltejs/vite-plugin-svelte": "5.0.3",
+		"@testing-library/svelte": "5.2.7",
+		"@types/node": "22.13.10",
+		"eslint": "9.22.0",
+		"eslint-config-prettier": "10.1.1",
+		"eslint-plugin-svelte": "3.3.2",
+		"globals": "16.0.0",
+		"jsdom": "26.0.0",
+		"knip": "5.46.0",
+		"prettier": "3.5.3",
+		"prettier-plugin-svelte": "3.3.3",
+		"svelte": "5.23.2",
+		"svelte-check": "4.1.5",
+		"typescript": "5.8.2",
+		"typescript-eslint": "8.26.1",
+		"vite": "6.2.2",
+		"vitest": "3.0.9"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild"
+		]
+	},
+	"dependencies": {
+		"graphql": "16.10.0"
+	},
+	"knip": {
+		"svelte": {
+			"entry": [
+				"./src/routes/**/+{layout,page,server,error}{,.server}.{svelte,ts}",
+				"./svelte.config.js"
+			],
+			"project": [
+				"./src/**/*.ts"
+			]
+		},
+		"paths": {
+			"$lib/*": [
+				"src/lib/*"
+			],
+			"$app/*": [
+				"node_modules/@sveltejs/kit/src/runtime/app/*"
+			],
+			"$env/*": [
+				"node_modules/@sveltejs/kit/src/runtime/env/*"
+			]
+		},
+		"ignore": [
+			"src/**/*.test.ts"
+		],
+		"ignoreDependencies": [
+			"relay-compiler"
+		],
+		"ignoreExportsUsedInFile": true
+	}
+}
