@@ -30,48 +30,16 @@ fragment UserFragment on User {
 	let outputView: EditorView;
 	let inputEditor: HTMLDivElement;
 	let outputEditor: HTMLDivElement;
+	let compilationTimer: ReturnType<typeof setTimeout>;
 
-	onMount(() => {
-		// Setup input editor
-		inputView = new EditorView({
-			parent: inputEditor,
-			state: EditorState.create({
-				doc: operationText,
-				extensions: [
-					basicSetup,
-					graphqlSyntax(),
-					EditorView.updateListener.of((update) => {
-						if (update.docChanged) {
-							operationText = update.state.doc.toString();
-						}
-					})
-				]
-			})
-		});
-
-		// Setup output editor (read-only)
-		outputView = new EditorView({
-			parent: outputEditor,
-			state: EditorState.create({
-				doc: optimizedOperationText,
-				extensions: [basicSetup, graphqlSyntax(), EditorView.editable.of(false)]
-			})
-		});
-
-		return () => {
-			inputView.destroy();
-			outputView.destroy();
-		};
-	});
-
-	// Function to compile the query when the button is clicked
-	async function compileQuery() {
+	// Function to compile the query
+	async function compileQuery(query: string) {
 		isLoading = true;
 		error = null;
 		success = null;
 
 		try {
-			optimizedOperationText = inlineRelayQueryFromString(operationText);
+			optimizedOperationText = inlineRelayQueryFromString(query);
 			outputView.dispatch({
 				changes: { from: 0, to: outputView.state.doc.length, insert: optimizedOperationText }
 			});
@@ -79,8 +47,19 @@ fragment UserFragment on User {
 		} catch (err: unknown) {
 			console.error(err);
 			error = err instanceof Error ? err.message : 'An unknown error occurred';
+
+			// Format the error message to be more human-readable
+			let userFriendlyError = error;
+			if (error.includes('SyntaxError')) {
+				userFriendlyError = 'Syntax Error: Please check your GraphQL syntax';
+			} else if (error.includes('Cannot find fragment')) {
+				userFriendlyError = 'Fragment Error: The referenced fragment could not be found';
+			} else if (error.includes('Expected Name')) {
+				userFriendlyError = 'Syntax Error: Expected a name in your GraphQL query';
+			}
+
 			outputView.dispatch({
-				changes: { from: 0, to: outputView.state.doc.length, insert: `Error: ${error}` }
+				changes: { from: 0, to: outputView.state.doc.length, insert: `Error: ${userFriendlyError}` }
 			});
 		} finally {
 			isLoading = false;
@@ -98,9 +77,50 @@ fragment UserFragment on User {
 			error = 'Failed to copy to clipboard';
 		}
 	}
+
+	onMount(() => {
+		// Setup input editor with auto-compile
+		inputView = new EditorView({
+			parent: inputEditor,
+			state: EditorState.create({
+				doc: operationText,
+				extensions: [
+					basicSetup,
+					graphqlSyntax(),
+					EditorView.updateListener.of((update) => {
+						if (update.docChanged) {
+							operationText = update.state.doc.toString();
+							// Add a small delay to prevent compiling on every keystroke
+							clearTimeout(compilationTimer);
+							compilationTimer = setTimeout(() => {
+								compileQuery(operationText);
+							}, 100);
+						}
+					})
+				]
+			})
+		});
+
+		// Setup output editor (read-only)
+		outputView = new EditorView({
+			parent: outputEditor,
+			state: EditorState.create({
+				doc: optimizedOperationText,
+				extensions: [basicSetup, graphqlSyntax(), EditorView.editable.of(false)]
+			})
+		});
+
+		// Initial compilation
+		compileQuery(operationText);
+
+		return () => {
+			inputView.destroy();
+			outputView.destroy();
+		};
+	});
 </script>
 
-<main>
+<div class="app-container">
 	<header>
 		<div class="container">
 			<div class="logo">
@@ -121,59 +141,81 @@ fragment UserFragment on User {
 		</div>
 	</header>
 
-	<div class="container">
-		<div class="editors-container">
-			<div class="editor-card">
-				<div class="editor-header">
-					<h2 class="editor-title">GraphQL Operation</h2>
-					<p class="editor-description">
-						Copy and paste the query from your browser's network tab here.
-					</p>
+	<div class="main-content">
+		<div class="container full-height">
+			<div class="editors-container">
+				<div class="editor-card">
+					<div class="editor-header">
+						<h2 class="editor-title">GraphQL Operation</h2>
+						<p class="editor-description">Enter a GraphQL query with fragments to inline.</p>
+					</div>
+					<div class="editor-content" bind:this={inputEditor}></div>
 				</div>
-				<div class="editor-content" bind:this={inputEditor}></div>
-			</div>
 
-			<div class="editor-card">
-				<div class="editor-header">
-					<h2 class="editor-title">Compiled Result</h2>
-					<p class="editor-description">The optimized and inlined query will appear here.</p>
+				<div class="editor-card">
+					<div class="editor-header">
+						<div class="editor-header-with-button">
+							<div>
+								<h2 class="editor-title">Compiled Result</h2>
+								<p class="editor-description">The compiled inline query.</p>
+							</div>
+							<button
+								class="btn btn-icon"
+								on:click={copyToClipboard}
+								disabled={!optimizedOperationText}
+								title="Copy Result to Clipboard"
+								aria-label="Copy Result to Clipboard"
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="18"
+									height="18"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+									<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+								</svg>
+							</button>
+						</div>
+					</div>
+					<div class="editor-content" bind:this={outputEditor}></div>
 				</div>
-				<div class="editor-content" bind:this={outputEditor}></div>
 			</div>
 		</div>
+	</div>
 
-		<div class="controls">
-			<button class="btn btn-primary" on:click={compileQuery} disabled={isLoading}>
-				{#if isLoading}
-					<span class="spinner"></span>
-					Compiling...
-				{:else}
-					Compile Query
-				{/if}
-			</button>
-
-			<button class="btn btn-outline" on:click={copyToClipboard} disabled={!optimizedOperationText}>
-				Copy Result
-			</button>
-		</div>
-
-		{#if error}
+	<footer>
+		{#if isLoading}
+			<div class="status status-loading" transition:fade>
+				<span class="spinner"></span>
+				Compiling...
+			</div>
+		{:else if error}
 			<div class="status status-error" transition:fade>
 				{error}
 			</div>
-		{/if}
-
-		{#if success}
+		{:else if success}
 			<div class="status status-success" transition:fade>
 				{success}
 			</div>
 		{/if}
-	</div>
-</main>
+	</footer>
+</div>
 
 <style>
-	:global(body) {
+	:global(html, body) {
 		margin: 0;
+		padding: 0;
+		height: 100%;
+		overflow: hidden;
+	}
+
+	:global(body) {
 		font-family:
 			-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell,
 			'Helvetica Neue', sans-serif;
@@ -181,19 +223,48 @@ fragment UserFragment on User {
 		color: #1f2937;
 	}
 
+	.app-container {
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+		overflow: hidden;
+	}
+
 	header {
 		background-color: white;
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 		padding: 1rem 0;
-		position: sticky;
-		top: 0;
 		z-index: 10;
+		flex-shrink: 0;
+	}
+
+	.main-content {
+		flex: 1;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+
+	footer {
+		padding: 0.75rem 0;
+		background-color: white;
+		border-top: 1px solid #e5e7eb;
+		flex-shrink: 0;
+		display: flex;
+		justify-content: center;
 	}
 
 	.container {
-		max-width: 1280px;
+		width: 100%;
+		max-width: 1800px;
 		margin: 0 auto;
 		padding: 0 1rem;
+	}
+
+	.full-height {
+		height: 100%;
+		display: flex;
+		flex-direction: column;
 	}
 
 	header .container {
@@ -216,15 +287,12 @@ fragment UserFragment on User {
 		height: 24px;
 	}
 
-	main {
-		padding: 2rem 0;
-	}
-
 	.editors-container {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 1.5rem;
-		margin-bottom: 1.5rem;
+		height: 100%;
+		padding: 1.5rem 0;
 	}
 
 	.editor-card {
@@ -234,12 +302,24 @@ fragment UserFragment on User {
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
+		height: 100%;
 	}
 
 	.editor-header {
 		padding: 1rem;
 		border-bottom: 1px solid #e5e7eb;
 		background-color: #f8fafc;
+		flex-shrink: 0;
+	}
+
+	h2 {
+		margin: 0;
+	}
+
+	.editor-header-with-button {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
 	}
 
 	.editor-title {
@@ -255,19 +335,17 @@ fragment UserFragment on User {
 	}
 
 	.editor-content {
-		min-height: 400px;
-		width: 100%;
+		flex: 1;
+		overflow: auto;
+		position: relative;
 	}
 
 	:global(.cm-editor) {
 		height: 100%;
 	}
 
-	.controls {
-		display: flex;
-		justify-content: center;
-		margin: 1.5rem 0;
-		gap: 1rem;
+	:global(.cm-scroller) {
+		overflow: auto;
 	}
 
 	.btn {
@@ -283,31 +361,20 @@ fragment UserFragment on User {
 		gap: 0.5rem;
 	}
 
-	.btn-primary {
-		background-color: #4f46e5;
-		color: white;
-	}
-
-	.btn-primary:hover:not(:disabled) {
-		background-color: #4338ca;
-	}
-
-	.btn-primary:disabled {
-		opacity: 0.7;
-		cursor: not-allowed;
-	}
-
-	.btn-outline {
+	.btn-icon {
+		padding: 0.5rem;
 		background-color: transparent;
 		border: 1px solid #e5e7eb;
-		color: #1f2937;
+		border-radius: 0.375rem;
+		cursor: pointer;
+		transition: all 0.2s ease;
 	}
 
-	.btn-outline:hover:not(:disabled) {
+	.btn-icon:hover:not(:disabled) {
 		background-color: #f3f4f6;
 	}
 
-	.btn-outline:disabled {
+	.btn-icon:disabled {
 		opacity: 0.7;
 		cursor: not-allowed;
 	}
@@ -317,7 +384,11 @@ fragment UserFragment on User {
 		border-radius: 0.375rem;
 		font-size: 0.875rem;
 		font-weight: 500;
-		margin-top: 1rem;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		justify-content: center;
+		min-width: 200px;
 	}
 
 	.status-error {
@@ -330,13 +401,18 @@ fragment UserFragment on User {
 		color: #10b981;
 	}
 
+	.status-loading {
+		background-color: #e0f2fe;
+		color: #0284c7;
+	}
+
 	.spinner {
 		display: inline-block;
 		width: 16px;
 		height: 16px;
-		border: 2px solid rgba(255, 255, 255, 0.3);
+		border: 2px solid rgba(2, 132, 199, 0.3);
 		border-radius: 50%;
-		border-top-color: white;
+		border-top-color: #0284c7;
 		animation: spin 1s ease-in-out infinite;
 	}
 
