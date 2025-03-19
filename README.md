@@ -1,38 +1,115 @@
-# sv
+# GraphQL Query/Fragment Inliner
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A simple web tool that inlines GraphQL fragments into their query operations, making it easier to understand and work with GraphQL queries.
 
-## Creating a project
+[Try it live](https://stayradiated.github.io/graphql-compiler)
 
-If you're seeing this, you've probably already done this step. Congrats!
+![Screenshot of GraphQL Query/Fragment Inliner tool](https://user-images.githubusercontent.com/752849/123456789-abcdef12-3456-7890-abcd-ef1234567890.png)
 
-```bash
-# create a new project in the current directory
-npx sv create
+## Features
 
-# create a new project in my-app
-npx sv create my-app
+- Easily inline GraphQL fragments into their parent operations
+- Real-time compilation of GraphQL queries
+- Syntax highlighting for GraphQL
+- Copy optimized queries to clipboard
+- Web-based with no server dependencies
+
+## Usage
+
+1. Paste your GraphQL query with fragments into the left editor
+2. Click "Compile Query" to inline all fragments
+3. The optimized query appears in the right editor
+4. Copy the result to use in your application or API requests
+
+### Example
+
+**Input:**
+```graphql
+query UserQuery($id: ID!) {
+  user(id: $id) {
+    ...UserFragment
+    friends {
+      ...UserFragment
+    }
+  }
+}
+fragment UserFragment on User {
+  id
+  name
+  age
+}
 ```
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+**Output:**
+```graphql
+query UserQuery($id: ID!) {
+  user(id: $id) {
+    id
+    name
+    age
+    friends {
+      id
+      name
+      age
+    }
+  }
+}
 ```
 
-## Building
+## Why Use This Tool?
 
-To create a production version of your app:
+- **Debugging**: Makes it easier to visualize the complete query structure
+- **API Testing**: Generate clean queries for testing in GraphQL API tools
+- **Learning**: Better understand how fragments work in GraphQL
+- **Optimization**: Remove unnecessary fragment definitions for simpler queries
+
+## Development
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (v18 or later)
+- [pnpm](https://pnpm.io/)
+
+### Setup
 
 ```bash
-npm run build
+# Clone the repository
+git clone https://github.com/stayradiated/graphql-compiler.git
+cd graphql-compiler
+
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm dev
 ```
 
-You can preview the production build with `npm run preview`.
+### Building
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+```bash
+pnpm build
+```
+
+### Testing
+
+```bash
+pnpm test
+```
+
+## Implementation Details
+
+This tool uses:
+
+- [SvelteKit](https://kit.svelte.dev/) for the UI framework
+- [CodeMirror 6](https://codemirror.net/) for the code editors
+- [GraphQL.js](https://github.com/graphql/graphql-js) for parsing and manipulating GraphQL queries
+
+The core transformation logic can be found in `src/lib/inline-relay-query.ts`.
+
+## License
+
+MIT
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
