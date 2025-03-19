@@ -24,35 +24,37 @@ A simple web tool that inlines GraphQL fragments into their query operations, ma
 ### Example
 
 **Input:**
+
 ```graphql
 query UserQuery($id: ID!) {
-  user(id: $id) {
-    ...UserFragment
-    friends {
-      ...UserFragment
-    }
-  }
+	user(id: $id) {
+		...UserFragment
+		friends {
+			...UserFragment
+		}
+	}
 }
 fragment UserFragment on User {
-  id
-  name
-  age
+	id
+	name
+	age
 }
 ```
 
 **Output:**
+
 ```graphql
 query UserQuery($id: ID!) {
-  user(id: $id) {
-    id
-    name
-    age
-    friends {
-      id
-      name
-      age
-    }
-  }
+	user(id: $id) {
+		id
+		name
+		age
+		friends {
+			id
+			name
+			age
+		}
+	}
 }
 ```
 

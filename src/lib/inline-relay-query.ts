@@ -5,7 +5,9 @@ import type {
 	SelectionNode,
 	SelectionSetNode,
 	FieldNode,
-	InlineFragmentNode
+	InlineFragmentNode,
+	DefinitionNode,
+	OperationDefinitionNode
 } from 'graphql';
 
 /**
@@ -35,10 +37,21 @@ function mergeSelections(selections: readonly SelectionNode[]): SelectionNode[] 
 			if (seen.has(key)) {
 				const existing = seen.get(key) as FieldNode;
 				if (selection.selectionSet) {
-					existing.selectionSet = mergeSelectionSets(
-						existing.selectionSet!,
-						selection.selectionSet
+					// Create a new field node with merged selection set instead of modifying directly
+					const newField: FieldNode = {
+						...existing,
+						selectionSet: existing.selectionSet
+							? mergeSelectionSets(existing.selectionSet, selection.selectionSet)
+							: selection.selectionSet
+					};
+					// Update the seen map and replace in merged array
+					seen.set(key, newField);
+					const index = merged.findIndex(
+						(node) => node.kind === 'Field' && (node.alias?.value || node.name.value) === alias
 					);
+					if (index !== -1) {
+						merged[index] = newField;
+					}
 				}
 			} else {
 				seen.set(key, selection);
@@ -49,13 +62,26 @@ function mergeSelections(selections: readonly SelectionNode[]): SelectionNode[] 
 			const key = 'inline:' + typeName;
 			if (seen.has(key)) {
 				const existing = seen.get(key) as InlineFragmentNode;
-				existing.selectionSet = mergeSelectionSets(existing.selectionSet, selection.selectionSet);
+				// Create a new inline fragment with merged selection set
+				const newFragment: InlineFragmentNode = {
+					...existing,
+					selectionSet: mergeSelectionSets(existing.selectionSet, selection.selectionSet)
+				};
+				// Update the seen map and replace in merged array
+				seen.set(key, newFragment);
+				const index = merged.findIndex(
+					(node) =>
+						node.kind === 'InlineFragment' && (node.typeCondition?.name.value || '') === typeName
+				);
+				if (index !== -1) {
+					merged[index] = newFragment;
+				}
 			} else {
 				seen.set(key, selection);
 				merged.push(selection);
 			}
 		} else {
-			// For any other kinds (normally FragmentSpreads shouldn’t remain after inlining)
+			// For any other kinds (normally FragmentSpreads shouldn't remain after inlining)
 			merged.push(selection);
 		}
 	});
@@ -123,11 +149,15 @@ function inlineFragments<T extends { selectionSet?: SelectionSetNode }>(
 function inlineRelayQueryFromAST(ast: DocumentNode): DocumentNode {
 	const fragmentMap = buildFragmentMap(ast);
 	const newDefinitions = ast.definitions
-		.filter((def) => def.kind !== 'FragmentDefinition')
-		.map((def) => inlineFragments(def, fragmentMap));
+		.filter((def): def is OperationDefinitionNode => {
+			// Filter to only keep operation definitions (queries, mutations, subscriptions)
+			return def.kind !== 'FragmentDefinition' && 'operation' in def; // Ensure the node has an operation property
+		})
+		.map((def) => inlineFragments(def, fragmentMap) as OperationDefinitionNode);
+
 	return {
 		...ast,
-		definitions: newDefinitions
+		definitions: newDefinitions as readonly DefinitionNode[]
 	};
 }
 
