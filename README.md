@@ -2,7 +2,7 @@
 
 A fast, powerful web tool that inlines GraphQL fragments into their query operations, making it easier to understand and work with GraphQL queries.
 
-[Try it live](https://stayradiated.github.io/graphql-compiler)
+[Try it live](https://runn-fast.github.io/graphql-compiler)
 
 ![Screenshot of GraphQL Query/Fragment Inliner tool](./screenshot.png)
 
@@ -86,7 +86,7 @@ query UserQuery($id: ID!) {
 
 ```bash
 # Clone the repository
-git clone https://github.com/stayradiated/graphql-compiler.git
+git clone https://github.com/Runn-Fast/graphql-compiler.git
 cd graphql-compiler
 
 # Install dependencies
