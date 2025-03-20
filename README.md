@@ -4,7 +4,7 @@ A simple web tool that inlines GraphQL fragments into their query operations, ma
 
 [Try it live](https://stayradiated.github.io/graphql-compiler)
 
-![Screenshot of GraphQL Query/Fragment Inliner tool](https://user-images.githubusercontent.com/752849/123456789-abcdef12-3456-7890-abcd-ef1234567890.png)
+![Screenshot of GraphQL Query/Fragment Inliner tool](./screenshot.png)
 
 ## Features
 
