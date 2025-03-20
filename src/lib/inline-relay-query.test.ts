@@ -10,6 +10,10 @@ const relayQueryText = `query NavigationQuery {
     account {
       id
       account_type
+      people(where: {is_active: {_eq: true}}) {
+        id
+        email
+      }
     }
     ...PermissionsProvider_user
   }
@@ -21,30 +25,35 @@ fragment PermissionsProvider_user on users {
   account {
     id
     timesheets_protected
+    people(where: {is_active: {_eq: true}}) {
+      id
+      name
+    }
   }
   permissions
 }`;
 
-const expectedInlinedQuery = `query NavigationQuery {
-  current_user {
-    id
-    permissions
-    account {
-      id
-      account_type
-      timesheets_protected
-    }
-    email
-  }
-}
-`;
-
 describe('inlineRelayQueryFromString', () => {
 	it('inlines fragments in a Relay query string', () => {
 		const inlined = inlineRelayQueryFromString(relayQueryText);
-		// Remove extra whitespace/newlines for comparison.
-		const normalized = inlined.replace(/\s+/g, ' ').trim();
-		const normalizedExpected = expectedInlinedQuery.replace(/\s+/g, ' ').trim();
-		expect(normalized).toBe(normalizedExpected);
+		expect(inlined).toMatchInlineSnapshot(`
+			"query NavigationQuery {
+			  current_user {
+			    id
+			    permissions
+			    account {
+			      id
+			      account_type
+			      people(where: {is_active: {_eq: true}}) {
+			        id
+			        email
+			        name
+			      }
+			      timesheets_protected
+			    }
+			    email
+			  }
+			}"
+		`);
 	});
 });
