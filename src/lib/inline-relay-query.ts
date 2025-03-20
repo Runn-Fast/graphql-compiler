@@ -32,10 +32,10 @@ function isInlineFragmentNode(node: SelectionNode): node is InlineFragmentNode {
 function normalizeValueNode(value: ValueNode): unknown {
 	switch (value.kind) {
 		case 'ObjectValue':
-      return value.fields.reduce<Record<string, unknown>>((obj, field) => {
-        obj[field.name.value] = normalizeValueNode(field.value);
-        return obj;
-      }, {})
+			return value.fields.reduce<Record<string, unknown>>((obj, field) => {
+				obj[field.name.value] = normalizeValueNode(field.value);
+				return obj;
+			}, {});
 
 		case 'ListValue':
 			return value.values.map(normalizeValueNode);
