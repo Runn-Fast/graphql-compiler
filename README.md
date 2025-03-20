@@ -1,6 +1,6 @@
 # GraphQL Query/Fragment Inliner
 
-A simple web tool that inlines GraphQL fragments into their query operations, making it easier to understand and work with GraphQL queries.
+A fast, powerful web tool that inlines GraphQL fragments into their query operations, making it easier to understand and work with GraphQL queries.
 
 [Try it live](https://stayradiated.github.io/graphql-compiler)
 
@@ -8,18 +8,24 @@ A simple web tool that inlines GraphQL fragments into their query operations, ma
 
 ## Features
 
-- Easily inline GraphQL fragments into their parent operations
-- Real-time compilation of GraphQL queries
-- Syntax highlighting for GraphQL
-- Copy optimized queries to clipboard
-- Web-based with no server dependencies
+- **Real-time Compilation**: Automatically inlines fragments as you type with minimal delay
+- **Multiple Tabs**: Work on several queries simultaneously with persistent tabs
+- **Tab Management**: Create, rename, and close tabs to organize your work
+- **State Persistence**: Your queries and tabs are saved between sessions
+- **Syntax Highlighting**: Full GraphQL syntax highlighting for better readability
+- **Detailed Error Messages**: User-friendly error feedback when compilation fails
+- **One-Click Copy**: Copy optimized queries to clipboard with a single click
+- **Responsive Design**: Works on desktop and mobile devices
+- **Completely Client-Side**: No server dependencies, works entirely in your browser
 
 ## Usage
 
-1. Paste your GraphQL query with fragments into the left editor
-2. Click "Compile Query" to inline all fragments
-3. The optimized query appears in the right editor
-4. Copy the result to use in your application or API requests
+1. Type or paste your GraphQL query with fragments into the left editor
+2. See the compiled query with inlined fragments in real-time on the right
+3. Create multiple tabs to work on different queries
+4. Rename tabs by double-clicking on their titles
+5. Click the copy button to copy the optimized query to your clipboard
+6. Your work is automatically saved between browser sessions
 
 ### Example
 
@@ -60,6 +66,10 @@ query UserQuery($id: ID!) {
 
 ## Why Use This Tool?
 
+- **Speed**: Instantly see the result of your fragment inlining without waiting
+- **Simplicity**: No complex configuration required - just type and see results
+- **Persistence**: Your work is automatically saved between sessions
+- **Organization**: Multiple tabs let you work on different queries simultaneously
 - **Debugging**: Makes it easier to visualize the complete query structure
 - **API Testing**: Generate clean queries for testing in GraphQL API tools
 - **Learning**: Better understand how fragments work in GraphQL
@@ -103,8 +113,9 @@ pnpm test
 This tool uses:
 
 - [SvelteKit](https://kit.svelte.dev/) for the UI framework
-- [CodeMirror 6](https://codemirror.net/) for the code editors
+- [CodeMirror 6](https://codemirror.net/) for the code editors with GraphQL syntax highlighting
 - [GraphQL.js](https://github.com/graphql/graphql-js) for parsing and manipulating GraphQL queries
+- [Svelte State Management](https://svelte.dev/docs/state-management) for persistent tab states
 
 The core transformation logic can be found in `src/lib/inline-relay-query.ts`.
 
